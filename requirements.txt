@@ -2,3 +2,9 @@ flask
 scikit-learn
 numpy
 pandas
+requests
+matplotlib
+seaborn
+plotly
+datetime
+sqlite3
