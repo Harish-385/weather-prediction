@@ -2,21 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Weather Predictor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Weather & Clothing Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --accent: #4895ef;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --success: #4cc9f0;
-            --warning: #f72585;
-            --radius: 12px;
-            --shadow: 0 10px 30px rgba(0,0,0,0.1);
-            --transition: all 0.3s ease;
+            --primary: #00d4ff;
+            --secondary: #0099cc;
+            --accent: #ff6b6b;
+            --success: #4ecdc4;
+            --warning: #ffd93d;
+            --danger: #ff4757;
+            --dark-bg: #0a0a0a;
+            --dark-card: #1a1a1a;
+            --dark-surface: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #666666;
+            --border: #333333;
+            --radius: 20px;
+            --shadow: 0 20px 40px rgba(0,0,0,0.3);
+            --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         * {
@@ -26,359 +35,803 @@
         }
         
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            display: flex;
-             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            color: var(--dark);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
         }
         
-        .card {
-            background: white;
-            padding: 2.5rem;
-            border-radius: var(--radius);
+        .header h1 {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+            letter-spacing: -0.02em;
+        }
+        
+        .temp-display {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 1.5rem 0;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.02em;
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .forecast-temp {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* 3D Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 480px;
-            box-shadow: var(--shadow);
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(45deg, #0a0a0a, #1a1a1a, #0a0a0a);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        .bg-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            opacity: 0.6;
+        }
+        
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 1s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 2s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 3s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 4s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 6s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 7s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 8s; }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
             text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+
+        
+        .header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+        
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.5)); }
+            to { filter: drop-shadow(0 0 30px rgba(0, 212, 255, 0.8)); }
+        }
+        
+        .main-card {
+            background: rgba(26, 26, 26, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 2rem;
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        .main-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), var(--glow);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--dark-surface), var(--dark-card));
+            color: var(--text-primary);
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .card-header h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card-body {
+            padding: 2.5rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: rgba(42, 42, 42, 0.8);
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(42, 42, 42, 0.9);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1), var(--glow);
+            transform: translateY(-2px);
+        }
+        
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--text-primary);
+            padding: 16px 32px;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 212, 255, 0.3), var(--glow);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .error {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+            padding: 1.2rem;
+            border-radius: var(--radius);
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--danger);
+            backdrop-filter: blur(10px);
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .weather-result {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .weather-card {
+            background: rgba(42, 42, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
             transition: var(--transition);
             position: relative;
             overflow: hidden;
         }
         
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        }
-        
-        .card::before {
+        .weather-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 8px;
-            background: linear-gradient(to right, var(--primary), var(--accent));
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(255, 107, 107, 0.05));
+            opacity: 0;
+            transition: var(--transition);
         }
         
-        .card h1 {
+        .weather-card:hover::before {
+            opacity: 1;
+        }
+        
+        .weather-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4), var(--glow);
+        }
+        
+        .weather-card h3 {
             color: var(--primary);
-            margin-bottom: 1rem;
-            font-weight: 700;
-            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.3rem;
             position: relative;
-            display: inline-block;
+            z-index: 1;
         }
         
-        .card h1::after {
+        .current-weather {
+            text-align: center;
+            background: linear-gradient(135deg, var(--dark-surface), var(--dark-card));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .current-weather::before {
             content: '';
             position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: var(--accent);
-            border-radius: 3px;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
         }
         
-        .weather-icon {
-            width: 80px;
-            height: 80px;
-            margin: 1.5rem auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(to bottom right, #e3f2fd, #bbdefb);
-            border-radius: 50%;
-            padding: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
         }
         
-        .weather-icon i {
-            font-size: 2.5rem;
-            color: var(--primary);
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-            position: relative;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--dark);
-            font-size: 0.9rem;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: var(--radius);
-            font-size: 1rem;
-            transition: var(--transition);
-            background-color: #f8f9fa;
-         }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent);
-            background-color: white;
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-        
-        input::placeholder {
-            color: #adb5bd;
-        }
-        
-        button {
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white;
-            padding: 14px;
-            border: none;
-            width: 100%;
-            margin-top: 10px;
-            border-radius: var(--radius);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: var(--transition);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .error {
-            color: var(--warning);
-            margin: 1rem 0;
-            padding: 10px 15px;
-            background-color: rgba(247, 37, 133, 0.1);
-            border-radius: var(--radius);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .error i {
-            font-size: 1.1rem;
-        }
-        
-        .result {
-            text-align: left;
-            margin-top: 2rem;
-            background: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            animation: fadeIn 0.5s ease;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .result h3 {
-            color: var(--primary);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .result h3 i {
-            font-size: 1.2rem;
-        }
+
         
         .weather-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 1rem;
+            gap: 1.5rem;
+            margin-top: 2rem;
         }
         
         .stat {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: var(--transition);
         }
         
-        .stat i {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(67, 97, 238, 0.1);
-            color: var(--primary);
-            border-radius: 50%;
+        .stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border-color: var(--primary);
         }
         
-        .stat-value {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: var(--dark);
-        }
+
         
         .stat-label {
-            font-size: 0.8rem;
-            color: #6c757d;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
         }
         
-        .location {
-            margin-top: 1rem;
+        .clothing-suggestions {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 217, 61, 0.1));
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: var(--radius);
+            padding: 2rem;
+        }
+        
+        .suggestion-list {
+            list-style: none;
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .suggestion-item {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: var(--dark);
+            gap: 1rem;
             font-weight: 500;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            cursor: pointer;
         }
         
-        .location i {
-            color: var(--accent);
+        .suggestion-item:hover {
+            transform: translateX(10px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border-color: var(--accent);
+            background: rgba(42, 42, 42, 0.9);
         }
         
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .charts-section {
+            margin-top: 3rem;
         }
         
-        /* Responsive adjustments */
-        @media (max-width: 576px) {
-            .card {
-                padding: 1.5rem;
+        .chart-container {
+            background: rgba(42, 42, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+        
+        .chart-container h3 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.4rem;
+        }
+        
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .forecast-item {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 107, 107, 0.1));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .forecast-item:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            border-color: var(--primary);
+        }
+        
+        .forecast-date {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.8rem;
+        }
+        
+
+        
+        .forecast-condition {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--primary);
+        }
+        
+        .loading i {
+            font-size: 3rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
             }
             
             .weather-stats {
                 grid-template-columns: 1fr;
             }
+            
+            .forecast-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .temp-display {
+                font-size: 3rem;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Weather Predictor</h1>
-        <div class="weather-icon">
-            <i class="fas fa-cloud-sun"></i>
+    <!-- 3D Animated Background -->
+    <div class="bg-animation">
+        <div class="bg-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🌤️ AI Weather & Clothing Assistant</h1>
+            <p>Smart weather insights with intelligent clothing recommendations</p>
         </div>
 
-        <form method="POST">
-            <div class="form-group">
-                <label for="country"><i class="fas fa-globe"></i> Country</label>
-                <select name="country" required>
-                    <option value="">Select Country</option>
-                    <option value="US">United States</option>
-                    <option value="IN">India</option>
-                    <option value="GB">United Kingdom</option>
-                    <option value="AU">Australia</option>
-                    <option value="CA">Canada</option>
-                    <option value="JP">Japan</option>
-                    <option value="DE">Germany</option>
-                    <option value="FR">France</option>
-                    <option value="BR">Brazil</option>
-                    <option value="ZA">South Africa</option>
-                    <option value="CN">China</option>
-                    <option value="RU">Russia</option>
-                    <option value="IT">Italy</option>
-                    <option value="ES">Spain</option>
-                    <option value="MX">Mexico</option>
-                    <option value="KR">South Korea</option>
-                    <option value="NL">Netherlands</option>
-                    <option value="SE">Sweden</option>
-                    <option value="NO">Norway</option>
-                    <option value="CH">Switzerland</option>
-                    <option value="BE">Belgium</option>
-                    <option value="AT">Austria</option>
-                    <option value="DK">Denmark</option>
-                </select>
+        <div class="main-card">
+            <div class="card-header">
+                <h2><i class="fas fa-search"></i> Search Location</h2>
             </div>
-
-            <div class="form-group">
-                <label for="state"><i class="fas fa-map-marked-alt"></i> State (Optional)</label>
-                <input type="text" name="state" placeholder="Enter State">
-            </div>
-
-            <div class="form-group">
-                <label for="city"><i class="fas fa-city"></i> City / Place</label>
-                <input type="text" name="city" placeholder="Enter City/Place" required>
-            </div>
-
-            <button type="submit">
-                <i class="fas fa-cloud-sun-rain"></i> Predict Weather
-            </button>
-
-            {% if error %}
-                <div class="error">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span>{{ error }}</span>
-                </div>
-            {% endif %}
-
-            {% if prediction %}
-                <div class="result">
-                     <h3>
-                        <i class="fas fa-chart-line"></i>
-                        Weather Prediction
-                    </h3>
-                    <p>Your weather prediction: <strong>{{ prediction }}</strong></p>
-                    
-                    <div class="weather-stats">
-                        <div class="stat">
-                            <i class="fas fa-temperature-high"></i>
-                            <div>
-                                <div class="stat-value">{{ weather_data['Temperature'] }} °C</div>
-                                <div class="stat-label">Temperature</div>
-                            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="country"><i class="fas fa-globe"></i> Country</label>
+                            <select name="country" required>
+                                <option value="">Select Country</option>
+                                <option value="US">United States</option>
+                                <option value="IN">India</option>
+                                <option value="GB">United Kingdom</option>
+                                <option value="AU">Australia</option>
+                                <option value="CA">Canada</option>
+                                <option value="JP">Japan</option>
+                                <option value="DE">Germany</option>
+                                <option value="FR">France</option>
+                                <option value="BR">Brazil</option>
+                                <option value="ZA">South Africa</option>
+                                <option value="CN">China</option>
+                                <option value="RU">Russia</option>
+                                <option value="IT">Italy</option>
+                                <option value="ES">Spain</option>
+                                <option value="MX">Mexico</option>
+                                <option value="KR">South Korea</option>
+                                <option value="NL">Netherlands</option>
+                                <option value="SE">Sweden</option>
+                                <option value="NO">Norway</option>
+                                <option value="CH">Switzerland</option>
+                                <option value="BE">Belgium</option>
+                                <option value="AT">Austria</option>
+                                <option value="DK">Denmark</option>
+                            </select>
                         </div>
+
+                        <div class="form-group">
+                            <label for="city"><i class="fas fa-city"></i> City</label>
+                            <input type="text" name="city" placeholder="Enter city name" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">
+                        <i class="fas fa-cloud-sun"></i> Get Weather & Clothing Suggestions
+                    </button>
+
+                    {% if error %}
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ error }}
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        {% if weather_data %}
+            <div class="weather-result">
+                <!-- Current Weather -->
+                <div class="weather-card">
+                    <div class="current-weather">
+                        <h3><i class="fas fa-map-marker-alt"></i> {{ weather_data['City'] }}, {{ weather_data['Country'] }}</h3>
+                        <div class="temp-display">{{ weather_data['Temperature'] }}°C</div>
+                        <p>{{ weather_data['Description'] | title }}</p>
                         
-                        <div class="stat">
-                            <i class="fas fa-tint"></i>
-                            <div>
+                        <div class="weather-stats">
+                            <div class="stat">
                                 <div class="stat-value">{{ weather_data['Humidity'] }}%</div>
                                 <div class="stat-label">Humidity</div>
                             </div>
-                        </div>
-                        
-                        <div class="stat">
-                            <i class="fas fa-wind"></i>
-                            <div>
+                            <div class="stat">
                                 <div class="stat-value">{{ weather_data['Wind Speed'] }} m/s</div>
                                 <div class="stat-label">Wind Speed</div>
                             </div>
-                        </div>
-                        
-                        <div class="stat">
-                            <i class="fas fa-tachometer-alt"></i>
-                            <div>
+                            <div class="stat">
                                 <div class="stat-value">{{ weather_data['Pressure'] }} hPa</div>
                                 <div class="stat-label">Pressure</div>
                             </div>
+                            <div class="stat">
+                                <div class="stat-value">{{ weather_data['Condition'] }}</div>
+                                <div class="stat-label">Condition</div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>{{ weather_data['City'] }}, {{ weather_data['Country'] }}</span>
+                </div>
+
+                <!-- Clothing Suggestions -->
+                <div class="weather-card">
+                    <div class="clothing-suggestions">
+                        <h3><i class="fas fa-tshirt"></i> AI Clothing Suggestions</h3>
+                        <ul class="suggestion-list">
+                            {% for suggestion in clothing_suggestions %}
+                                <li class="suggestion-item">
+                                    {{ suggestion }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Forecast -->
+            {% if forecast_data %}
+                <div class="main-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-calendar-alt"></i> 7-Day Forecast</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="forecast-grid">
+                            {% for item in forecast_data[:7] %}
+                                <div class="forecast-item">
+                                    <div class="forecast-date">{{ item.date.split(' ')[0] }}</div>
+                                    <div class="forecast-temp">{{ item.temp }}°C</div>
+                                    <div class="forecast-condition">{{ item.description | title }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             {% endif %}
-        </form>
+
+            <!-- Weather Charts -->
+            {% if charts %}
+                <div class="charts-section">
+                    {% if charts.temperature %}
+                        <div class="chart-container">
+                            <h3><i class="fas fa-chart-line"></i> Temperature Forecast</h3>
+                            <div id="temp-chart"></div>
+                        </div>
+                    {% endif %}
+
+                    {% if charts.humidity %}
+                        <div class="chart-container">
+                            <h3><i class="fas fa-tint"></i> Humidity Forecast</h3>
+                            <div id="humidity-chart"></div>
+                        </div>
+                    {% endif %}
+
+                    {% if charts.history %}
+                        <div class="chart-container">
+                            <h3><i class="fas fa-history"></i> Historical Comparison</h3>
+                            <div id="history-chart"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Weather Prediction -->
+            {% if prediction %}
+                <div class="main-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-magic"></i> AI Weather Prediction</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="weather-card">
+                            <h3>Predicted Weather Pattern</h3>
+                            <p><strong>{{ prediction }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
     </div>
+
+    <script>
+        // Load charts if available
+        {% if charts %}
+            {% if charts.temperature %}
+                Plotly.newPlot('temp-chart', JSON.parse('{{ charts.temperature | safe }}'));
+            {% endif %}
+            
+            {% if charts.humidity %}
+                Plotly.newPlot('humidity-chart', JSON.parse('{{ charts.humidity | safe }}'));
+            {% endif %}
+            
+            {% if charts.history %}
+                Plotly.newPlot('history-chart', JSON.parse('{{ charts.history | safe }}'));
+            {% endif %}
+        {% endif %}
+
+        // Add loading animation
+        document.querySelector('form').addEventListener('submit', function() {
+            const btn = this.querySelector('button');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            btn.disabled = true;
+        });
+
+        // Add particle animation
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 6 + 's';
+            document.querySelector('.bg-particles').appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 6000);
+        }
+
+        // Create particles periodically
+        setInterval(createParticle, 2000);
+    </script>
 </body>
 </html>
